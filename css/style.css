@@ -109,7 +109,6 @@ button {
   position: absolute;
   inset: 0;
   background: #d9dde5;
-  filter: saturate(0.85) contrast(1.05);
 }
 
 .leaflet-container {
@@ -694,10 +693,12 @@ button {
   50% { transform: scale(1.03); }
 }
 
-#crt {
-  position: fixed;
+/* CRT scanlines on the menu screens only; the map itself stays clean and readable. */
+.overlay::after {
+  content: "";
+  position: absolute;
   inset: 0;
-  z-index: 3000;
+  z-index: 5;
   pointer-events: none;
   background:
     repeating-linear-gradient(
@@ -706,18 +707,10 @@ button {
       rgba(0, 0, 0, 0) 2px,
       rgba(0, 0, 0, 0.18) 3px
     ),
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.45) 100%);
-  animation: flicker 4s steps(1) infinite;
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.35) 100%);
 }
 
-@keyframes flicker {
-  0%, 92%, 100% { opacity: 1; }
-  93% { opacity: 0.85; }
-  94% { opacity: 1; }
-  97% { opacity: 0.9; }
-}
-
-body.no-crt #crt {
+body.no-crt .overlay::after {
   display: none;
 }
 
@@ -775,10 +768,6 @@ body.no-crt #crt {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  #crt {
-    animation: none;
   }
 
   .arcade-btn.blink,
@@ -1314,6 +1303,62 @@ body.no-crt #crt {
 
   .hud-btn {
     padding: 4px 6px;
+    font-size: 7px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Pinpoint confirm step
+   -------------------------------------------------------------------------- */
+#confirm {
+  border-color: var(--yellow);
+  box-shadow: 0 0 20px rgba(255, 230, 0, 0.45);
+  background: rgba(7, 6, 12, 0.85);
+}
+
+.confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirm-text {
+  font-size: 8px;
+  line-height: 1.6;
+  color: #b9b0d9;
+}
+
+.confirm-row .arcade-btn {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+/* The not-yet-confirmed marker: yellow and pulsing, draggable. */
+.crosshair-marker.pending {
+  cursor: grab;
+}
+
+.crosshair-marker.pending .crosshair span {
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+}
+
+.crosshair-marker.pending .crosshair {
+  animation: drop 0.35s cubic-bezier(0.2, 1.5, 0.4, 1) both, pendingpulse 1s ease-in-out 0.4s infinite alternate;
+}
+
+.crosshair-marker.pending .ripple {
+  border-color: var(--yellow);
+}
+
+@keyframes pendingpulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.25); }
+}
+
+@media (max-width: 640px) {
+  .confirm-text {
     font-size: 7px;
   }
 }

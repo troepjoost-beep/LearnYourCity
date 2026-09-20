@@ -11,7 +11,7 @@ Press **START** (or `Space` / `Enter`) and pick a mode:
 
 | Mode | What happens | Scoring |
 |------|--------------|---------|
-| **1 · Pinpoint** | A street name appears; click where it is on the map. Any point along the street counts as a hit. | By distance to the nearest point of the street (table below). |
+| **1 · Pinpoint** | A street name appears; tap where it is on the map, then press **CONFIRM** (tap again or drag the marker to move it first). Any point along the street counts as a hit. | By distance to the nearest point of the street (table below). |
 | **2 · 4 Choices** | A street lights up on the map; pick its name from four options (the wrong ones are nearby streets). Keys `1`–`4` work too. | 1000 correct, 0 wrong. |
 | **3 · Type it** | A street lights up; type its name. Case, accents, spaces and hyphens are ignored; `1e`/`eerste` and `str.`/`straat` are equivalent. | 1000 exact, 800 for a small typo, 0 wrong. |
 

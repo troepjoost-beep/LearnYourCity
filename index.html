@@ -36,6 +36,14 @@
         <span id="prompt-name" class="typed"></span>
       </div>
 
+      <!-- Confirm panel (pinpoint mode) -->
+      <div id="confirm" class="panel hidden">
+        <div class="confirm-row">
+          <div class="confirm-text">TAP ELSEWHERE OR DRAG THE MARKER TO MOVE IT</div>
+          <button id="btn-confirm" class="arcade-btn">CONFIRM &#10004;</button>
+        </div>
+      </div>
+
       <!-- Answer panel (name modes) -->
       <div id="answer" class="panel hidden">
         <div class="answer-title">WHICH STREET IS LIT UP?</div>
@@ -154,7 +162,6 @@
     </div>
   </div>
 
-  <div id="crt"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js" crossorigin=""></script>

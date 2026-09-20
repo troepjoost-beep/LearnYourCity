@@ -258,6 +258,7 @@
     }
     session++;
     if (cancelTyping) cancelTyping();
+    clearPending();
     layers.clearLayers();
     UI.hide($("result"));
     UI.hide($("answer"));
@@ -283,9 +284,9 @@
 
   // ---- Map drawing -------------------------------------------------------
 
-  function crosshairIcon() {
+  function crosshairIcon(pending) {
     return L.divIcon({
-      className: "crosshair-marker",
+      className: "crosshair-marker" + (pending ? " pending" : ""),
       html: '<div class="crosshair"><span></span><span></span></div><div class="ripple"></div>',
       iconSize: [40, 40],
       iconAnchor: [20, 20]
@@ -378,6 +379,7 @@
   function nextRound() {
     if (state !== "RESULT" && state !== "STARTING") return; // ignore double presses mid-animation
     if (cancelTyping) cancelTyping();
+    clearPending();
     UI.hide($("result"));
     UI.hide($("answer"));
     UI.hide($("prompt"));
@@ -421,15 +423,42 @@
     });
   }
 
+  // A tap only places (or moves) a draggable marker; the answer counts once CONFIRM is pressed,
+  // so panning around on a phone can't accidentally lock in a location.
+  var pending = null;
+
   function onMapClick(e) {
     if (state !== "PLAYING") return;
+    if (pending) {
+      pending.setLatLng(e.latlng);
+    } else {
+      pending = L.marker(e.latlng, { icon: crosshairIcon(true), draggable: true, zIndexOffset: 1000 }).addTo(layers);
+      UI.show($("confirm"));
+    }
+    Sfx.blip();
+  }
+
+  function clearPending() {
+    if (pending) layers.removeLayer(pending);
+    pending = null;
+    UI.hide($("confirm"));
+  }
+
+  function confirmChoice() {
+    if (state !== "PLAYING" || !pending) return;
+    var latlng = pending.getLatLng();
+    clearPending();
+    resolvePin(latlng);
+  }
+
+  function resolvePin(latlng) {
     state = "REVEALING"; // becomes RESULT once the panel is up, so NEXT can't skip the reveal
     $("screen").classList.remove("playing");
     if (cancelTyping) cancelTyping();
     UI.hide($("prompt"));
 
     var street = currentStreet();
-    var click = [e.latlng.lat, e.latlng.lng];
+    var click = [latlng.lat, latlng.lng];
     var hit = Geo.distanceToStreet(click, street);
     var pts = Geo.scoreForDistance(hit.distance);
     var rating = Geo.ratingForDistance(hit.distance);
@@ -438,7 +467,7 @@
     Sfx.drop();
     L.marker(click, { icon: crosshairIcon(), interactive: false }).addTo(layers);
 
-    var screenPt = map.latLngToContainerPoint(e.latlng);
+    var screenPt = map.latLngToContainerPoint(latlng);
     var mapRect = $("map").getBoundingClientRect();
     var px = mapRect.left + screenPt.x;
     var py = mapRect.top + screenPt.y;
@@ -800,6 +829,7 @@
   function onAction() {
     if (state === "TITLE" || state === "END") showModes();
     else if (state === "RESULT") nextRound();
+    else if (state === "PLAYING" && pending) confirmChoice();
   }
 
   function init(leafletMap) {
@@ -834,6 +864,7 @@
     });
     $("btn-learn-reset").addEventListener("click", resetLearn);
     $("btn-menu").addEventListener("click", quitToMenu);
+    $("btn-confirm").addEventListener("click", confirmChoice);
 
     buildSettings();
     $("btn-settings").addEventListener("click", showSettings);
