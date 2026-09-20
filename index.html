@@ -78,6 +78,7 @@
         <button id="btn-start" class="arcade-btn blink">PRESS START</button>
         <div class="hi-line">HI-SCORE <span id="title-hi" class="num">000000</span></div>
         <div class="credit">100 STREETS &middot; 20 PER GAME &middot; 3 MODES</div>
+        <button id="btn-settings" class="link-btn">&#9881; SETTINGS: <span id="title-enabled">100</span> STREETS</button>
       </div>
 
       <!-- Mode select -->
@@ -104,6 +105,22 @@
           </button>
         </div>
         <div class="credit">PRESS 1 / 2 / 3</div>
+        <button id="btn-settings-2" class="link-btn">&#9881; SETTINGS: <span id="modes-enabled">100</span> STREETS</button>
+        <div id="modes-warning" class="modes-warning hidden">ENABLE AT LEAST 5 STREETS TO PLAY</div>
+      </div>
+
+      <!-- Street settings -->
+      <div id="settings" class="overlay hidden">
+        <div class="modes-title">STREETS</div>
+        <div class="settings-bar">
+          <input id="settings-filter" type="text" placeholder="FILTER" autocomplete="off" spellcheck="false" />
+          <button id="btn-all" class="toggle-btn">ALL</button>
+          <button id="btn-none" class="toggle-btn">NONE</button>
+          <span id="settings-count" class="settings-count">100/100</span>
+        </div>
+        <div id="settings-list" class="settings-list"></div>
+        <div class="settings-note">EACH GAME PICKS UP TO 20 OF THE ENABLED STREETS. AT LEAST 5 NEEDED.</div>
+        <button id="btn-settings-done" class="arcade-btn">DONE</button>
       </div>
 
       <!-- End screen -->

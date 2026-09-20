@@ -83,7 +83,7 @@
     return streetList.map(function (s) {
       var lines = byName[s.name] || [];
       if (!lines.length) console.warn("No geometry for street: " + s.name);
-      return { name: s.name, hint: s.hint, lines: lines, centroid: centroidOf(lines) };
+      return { name: s.name, area: s.area, hint: s.hint, lines: lines, centroid: centroidOf(lines) };
     });
   }
 

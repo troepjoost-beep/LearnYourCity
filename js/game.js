@@ -7,7 +7,8 @@
 //   type - the street is lit up on the map, the player types its name
 (function () {
   var $ = UI.$;
-  var TOTAL_ROUNDS = 20;
+  var MAX_ROUNDS = 20;
+  var MIN_STREETS = 5;
   var HOME_VIEW = { center: [51.912, 4.47], zoom: 13 };
 
   var MODE_INFO = {
@@ -20,7 +21,9 @@
   var mode = "pin";
   var map = null;
   var streets = [];
-  var order = [];
+  var order = []; // the street objects for this game, in play order
+  var totalRounds = MAX_ROUNDS;
+  var disabled = {}; // street name -> true when switched off in settings
   var round = 0;
   var score = 0;
   var results = [];
@@ -40,7 +43,24 @@
       if (legacy > hiScores.pin) hiScores.pin = legacy;
       var m = localStorage.getItem("lyc_mode");
       if (MODE_INFO[m]) mode = m;
+      var off = JSON.parse(localStorage.getItem("lyc_disabled") || "[]");
+      disabled = {};
+      off.forEach(function (name) {
+        disabled[name] = true;
+      });
     } catch (e) {}
+  }
+
+  function saveDisabled() {
+    try {
+      localStorage.setItem("lyc_disabled", JSON.stringify(Object.keys(disabled)));
+    } catch (e) {}
+  }
+
+  function enabledStreets() {
+    return streets.filter(function (s) {
+      return !disabled[s.name];
+    });
   }
 
   function saveHiScore() {
@@ -69,12 +89,12 @@
   }
 
   function currentStreet() {
-    return streets[order[round - 1]];
+    return order[round - 1];
   }
 
   function updateHud() {
     $("hud-round").textContent = UI.pad(round, 2);
-    $("hud-total").textContent = UI.pad(TOTAL_ROUNDS, 2);
+    $("hud-total").textContent = UI.pad(totalRounds, 2);
     $("hud-hi").textContent = UI.pad(hiScores[mode], 6);
     $("hud-mode").textContent = MODE_INFO[mode].label;
   }
@@ -87,6 +107,15 @@
     });
     var best = Math.max(hiScores.pin, hiScores.mc, hiScores.type);
     $("title-hi").textContent = UI.pad(best, 6);
+
+    var enabled = enabledStreets().length;
+    var playable = enabled >= MIN_STREETS;
+    $("title-enabled").textContent = enabled;
+    $("modes-enabled").textContent = enabled;
+    $("modes-warning").classList.toggle("hidden", playable);
+    document.querySelectorAll(".mode-btn").forEach(function (btn) {
+      btn.disabled = !playable;
+    });
   }
 
   // Three wrong answers for multiple choice, drawn from the 8 streets nearest to the right one
@@ -172,11 +201,14 @@
   }
 
   function startGame(selectedMode) {
+    if (enabledStreets().length < MIN_STREETS) return;
     mode = selectedMode;
     saveMode();
     Sfx.round();
     state = "STARTING";
-    order = shuffle(streets.map(function (_, i) { return i; })).slice(0, TOTAL_ROUNDS);
+    var pool = enabledStreets();
+    totalRounds = Math.min(MAX_ROUNDS, pool.length);
+    order = shuffle(pool).slice(0, totalRounds);
     round = 0;
     score = 0;
     results = [];
@@ -194,7 +226,7 @@
     UI.hide($("prompt"));
     layers.clearLayers();
     round++;
-    if (round > TOTAL_ROUNDS) return endGame();
+    if (round > totalRounds) return endGame();
     updateHud();
     state = "ROUNDCARD";
     Sfx.round();
@@ -370,10 +402,12 @@
     UI.rollNumber($("hud-score"), from, score, { width: 6, duration: 800, tick: Sfx.tick });
   }
 
+  // Rank by share of the maximum possible score, so shorter games (fewer enabled streets) rank fairly.
   function rankFor(total) {
-    if (total >= 18000) return "ECHTE ROTTERDAMMER";
-    if (total >= 12000) return "LOCAL";
-    if (total >= 6000) return "COMMUTER";
+    var share = total / (totalRounds * 1000);
+    if (share >= 0.9) return "ECHTE ROTTERDAMMER";
+    if (share >= 0.6) return "LOCAL";
+    if (share >= 0.3) return "COMMUTER";
     return "TOURIST";
   }
 
@@ -423,6 +457,132 @@
     });
   }
 
+  // ---- Street settings ---------------------------------------------------
+
+  var settingsReturnTo = "TITLE";
+
+  // Builds the grouped checkbox list once; later changes only toggle classes and counts.
+  function buildSettings() {
+    var list = $("settings-list");
+    list.innerHTML = "";
+    var groups = {};
+    var groupOrder = [];
+    streets.forEach(function (s) {
+      var area = s.area || "Other";
+      if (!groups[area]) {
+        groups[area] = [];
+        groupOrder.push(area);
+      }
+      groups[area].push(s);
+    });
+    groupOrder.forEach(function (area) {
+      var section = document.createElement("div");
+      section.className = "settings-group";
+      var head = document.createElement("div");
+      head.className = "settings-group-head";
+      var title = document.createElement("span");
+      title.className = "settings-group-title";
+      title.textContent = area.toUpperCase();
+      var count = document.createElement("span");
+      count.className = "settings-group-count";
+      var toggle = document.createElement("button");
+      toggle.className = "toggle-btn";
+      toggle.type = "button";
+      toggle.textContent = "TOGGLE";
+      toggle.addEventListener("click", function () {
+        // Enable the whole area unless every street in it is already on, then disable it.
+        var allOn = groups[area].every(function (s) { return !disabled[s.name]; });
+        groups[area].forEach(function (s) {
+          if (allOn) disabled[s.name] = true;
+          else delete disabled[s.name];
+        });
+        settingsChanged();
+      });
+      head.appendChild(title);
+      head.appendChild(count);
+      head.appendChild(toggle);
+      section.appendChild(head);
+
+      var grid = document.createElement("div");
+      grid.className = "settings-grid";
+      groups[area].forEach(function (s) {
+        var label = document.createElement("label");
+        label.className = "street-toggle";
+        label.setAttribute("data-name", s.name);
+        label.setAttribute("data-area", area);
+        var box = document.createElement("input");
+        box.type = "checkbox";
+        box.addEventListener("change", function () {
+          if (box.checked) delete disabled[s.name];
+          else disabled[s.name] = true;
+          Sfx.blip();
+          settingsChanged();
+        });
+        label.appendChild(box);
+        label.appendChild(document.createTextNode(s.name));
+        grid.appendChild(label);
+      });
+      section.appendChild(grid);
+      list.appendChild(section);
+    });
+    settingsChanged();
+  }
+
+  // Syncs checkboxes, counts and the filter with the `disabled` map, then persists it.
+  function settingsChanged() {
+    var filter = Geo.normalizeName($("settings-filter").value);
+    var perArea = {};
+    document.querySelectorAll(".street-toggle").forEach(function (label) {
+      var name = label.getAttribute("data-name");
+      var area = label.getAttribute("data-area");
+      var on = !disabled[name];
+      label.querySelector("input").checked = on;
+      label.classList.toggle("off", !on);
+      label.classList.toggle("hidden", !!filter && Geo.normalizeName(name).indexOf(filter) < 0);
+      perArea[area] = perArea[area] || { on: 0, total: 0 };
+      perArea[area].total++;
+      if (on) perArea[area].on++;
+    });
+    document.querySelectorAll(".settings-group").forEach(function (section) {
+      var area = section.querySelector(".settings-group-title").textContent;
+      var key = Object.keys(perArea).filter(function (k) { return k.toUpperCase() === area; })[0];
+      var c = perArea[key] || { on: 0, total: 0 };
+      section.querySelector(".settings-group-count").textContent = c.on + "/" + c.total;
+      var anyVisible = section.querySelectorAll(".street-toggle:not(.hidden)").length > 0;
+      section.classList.toggle("hidden", !anyVisible);
+    });
+    var enabled = enabledStreets().length;
+    $("settings-count").textContent = enabled + "/" + streets.length;
+    $("settings-count").classList.toggle("low", enabled < MIN_STREETS);
+    saveDisabled();
+    renderModeButtons();
+  }
+
+  function showSettings() {
+    Sfx.unlock();
+    Sfx.blip();
+    settingsReturnTo = state === "MODES" ? "MODES" : "TITLE";
+    state = "SETTINGS";
+    UI.hide($("title"));
+    UI.hide($("modes"));
+    $("settings-filter").value = "";
+    settingsChanged();
+    UI.show($("settings"));
+  }
+
+  function closeSettings() {
+    if (state !== "SETTINGS") return;
+    UI.hide($("settings"));
+    if (settingsReturnTo === "MODES") {
+      state = "MODES";
+      renderModeButtons();
+      UI.show($("modes"));
+    } else {
+      state = "TITLE";
+      UI.show($("title"));
+    }
+  }
+
   function onAction() {
     if (state === "TITLE" || state === "END") showModes();
     else if (state === "RESULT") nextRound();
@@ -450,6 +610,22 @@
       submitAnswer($("answer-input").value);
     });
 
+    buildSettings();
+    $("btn-settings").addEventListener("click", showSettings);
+    $("btn-settings-2").addEventListener("click", showSettings);
+    $("btn-settings-done").addEventListener("click", closeSettings);
+    $("btn-all").addEventListener("click", function () {
+      disabled = {};
+      settingsChanged();
+    });
+    $("btn-none").addEventListener("click", function () {
+      streets.forEach(function (s) {
+        disabled[s.name] = true;
+      });
+      settingsChanged();
+    });
+    $("settings-filter").addEventListener("input", settingsChanged);
+
     // Buttons drop focus after a click so Space/Enter always go to the game, not the last button.
     document.querySelectorAll("button").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -458,7 +634,9 @@
     });
     document.addEventListener("keydown", function (e) {
       var tag = e.target && e.target.tagName;
+      if (e.code === "Escape" && state === "SETTINGS") return closeSettings();
       if (tag === "BUTTON" || tag === "INPUT") return; // let a focused control handle its own keys
+      if (state === "SETTINGS") return;
       if (state === "MODES" && /^Digit[123]$/.test(e.code)) {
         startGame(["pin", "mc", "type"][parseInt(e.code.slice(5), 10) - 1]);
       } else if (state === "ANSWERING" && mode === "mc" && /^Digit[1-4]$/.test(e.code)) {

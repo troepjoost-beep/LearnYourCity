@@ -1050,3 +1050,175 @@ body.no-crt #crt {
 #answer {
   background: rgba(7, 6, 12, 0.85);
 }
+
+/* --------------------------------------------------------------------------
+   Street settings
+   -------------------------------------------------------------------------- */
+.link-btn {
+  padding: 8px 10px;
+  font-size: 8px;
+  color: var(--cyan);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.link-btn:hover,
+.link-btn:focus-visible {
+  border-color: var(--cyan);
+  outline: none;
+}
+
+.mode-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.modes-warning {
+  font-size: 8px;
+  color: var(--red);
+  animation: blink 0.8s steps(1) infinite;
+}
+
+#settings {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.settings-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(640px, 100%);
+}
+
+#settings-filter {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  font-family: var(--font);
+  font-size: 9px;
+  color: var(--yellow);
+  background: #0a0818;
+  border: 2px solid var(--bezel-edge);
+  border-radius: 4px;
+  outline: none;
+  text-transform: uppercase;
+}
+
+#settings-filter:focus {
+  border-color: var(--cyan);
+}
+
+#settings-filter::placeholder {
+  color: #4f4770;
+}
+
+.settings-count {
+  font-size: 9px;
+  color: var(--lime);
+  white-space: nowrap;
+}
+
+.settings-count.low {
+  color: var(--red);
+  animation: blink 0.8s steps(1) infinite;
+}
+
+.settings-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(640px, 100%);
+  overflow-y: auto;
+  text-align: left;
+  border: 2px solid var(--bezel-edge);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.settings-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #12102a;
+  border-bottom: 2px solid var(--bezel-edge);
+}
+
+.settings-group-title {
+  flex: 1;
+  font-size: 9px;
+  color: var(--yellow);
+}
+
+.settings-group-count {
+  font-size: 8px;
+  color: var(--cyan);
+}
+
+.settings-group-head .toggle-btn {
+  padding: 6px 8px;
+  font-size: 7px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2px;
+  padding: 6px;
+}
+
+.street-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 12px;
+  color: var(--white);
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.street-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.street-toggle.off {
+  color: #6b6486;
+  text-decoration: line-through;
+}
+
+.street-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--lime);
+  cursor: pointer;
+}
+
+.settings-note {
+  font-size: 7px;
+  color: #8a7fb5;
+  letter-spacing: 1px;
+}
+
+#settings .arcade-btn {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-note {
+    display: none;
+  }
+}

@@ -18,6 +18,11 @@ Press **START** (or `Space` / `Enter`) and pick a mode:
 After 20 streets you get a final score, a rank and a per-street breakdown. High scores are
 kept per mode in the browser. Every result also shows a short fact about the street.
 
+**Settings** (⚙ button on the start and mode screens) lets you switch individual streets or
+whole areas on or off, with a filter box and ALL / NONE buttons. A game then draws up to 20 of
+the enabled streets (at least 5 must be enabled); ranks scale with the number of rounds. The
+selection is remembered in the browser.
+
 Pinpoint scoring per street (max 1000):
 
 | Distance to street | Rating  | Points          |
@@ -59,7 +64,7 @@ js/audio.js          Web Audio bleeps
 js/ui.js             typewriter, score roll-up, popups, shake, confetti
 js/game.js           game state machine and the three modes
 js/main.js           map setup and wiring
-data/streets.js      the 100 streets + a hint for each
+data/streets.js      the 100 streets, their area and a hint for each
 data/streets-raw.js  OSM way geometry for those streets
 tools/serve.ps1      tiny static server for local development
 .github/workflows    GitHub Pages deployment
@@ -67,7 +72,7 @@ tools/serve.ps1      tiny static server for local development
 
 ## Changing the streets
 
-1. Edit `data/streets.js` (names must match the OSM `name` tag exactly).
+1. Edit `data/streets.js` (names must match the OSM `name` tag exactly; `area` groups them in the settings screen).
 2. Re-fetch the geometry for the whole municipality. Put the names in the regex and run:
 
 ```bash
