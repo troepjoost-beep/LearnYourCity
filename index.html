@@ -25,6 +25,7 @@
       <div id="hud" class="hidden">
         <div class="hud-item">ROUND <span id="hud-round">01</span>/<span id="hud-total">20</span></div>
         <div class="hud-item">SCORE <span id="hud-score" class="num">000000</span></div>
+        <div class="hud-item hud-mode"><span id="hud-mode">PINPOINT</span></div>
         <div class="hud-item hud-hi">HI <span id="hud-hi" class="num">000000</span></div>
       </div>
 
@@ -32,6 +33,16 @@
       <div id="prompt" class="hidden">
         <span class="prompt-label">FIND:</span>
         <span id="prompt-name" class="typed"></span>
+      </div>
+
+      <!-- Answer panel (name modes) -->
+      <div id="answer" class="panel hidden">
+        <div class="answer-title">WHICH STREET IS LIT UP?</div>
+        <div id="answer-choices" class="choices"></div>
+        <form id="answer-form" class="answer-form hidden" autocomplete="off">
+          <input id="answer-input" type="text" placeholder="TYPE THE STREET NAME" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <button type="submit" class="arcade-btn">GO</button>
+        </form>
       </div>
 
       <!-- Round card -->
@@ -66,13 +77,39 @@
         </p>
         <button id="btn-start" class="arcade-btn blink">PRESS START</button>
         <div class="hi-line">HI-SCORE <span id="title-hi" class="num">000000</span></div>
-        <div class="credit">20 STREETS &middot; 1000 PTS EACH</div>
+        <div class="credit">100 STREETS &middot; 20 PER GAME &middot; 3 MODES</div>
+      </div>
+
+      <!-- Mode select -->
+      <div id="modes" class="overlay hidden">
+        <div class="modes-title">SELECT MODE</div>
+        <div class="mode-list">
+          <button class="mode-btn" data-mode="pin">
+            <span class="mode-key">1</span>
+            <span class="mode-name">PINPOINT</span>
+            <span class="mode-desc">READ THE NAME, CLICK THE STREET ON THE MAP.</span>
+            <span class="mode-hi">HI 000000</span>
+          </button>
+          <button class="mode-btn" data-mode="mc">
+            <span class="mode-key">2</span>
+            <span class="mode-name">4 CHOICES</span>
+            <span class="mode-desc">A STREET LIGHTS UP. PICK ITS NAME FROM FOUR.</span>
+            <span class="mode-hi">HI 000000</span>
+          </button>
+          <button class="mode-btn" data-mode="type">
+            <span class="mode-key">3</span>
+            <span class="mode-name">TYPE IT</span>
+            <span class="mode-desc">A STREET LIGHTS UP. TYPE ITS NAME. TYPOS FORGIVEN.</span>
+            <span class="mode-hi">HI 000000</span>
+          </button>
+        </div>
+        <div class="credit">PRESS 1 / 2 / 3</div>
       </div>
 
       <!-- End screen -->
       <div id="end" class="overlay hidden">
         <div class="end-title">GAME OVER</div>
-        <div class="end-score-label">FINAL SCORE</div>
+        <div class="end-score-label"><span id="end-mode">PINPOINT</span> &middot; FINAL SCORE</div>
         <div id="end-score" class="end-score num">000000</div>
         <div id="end-rank" class="stamp"></div>
         <div id="end-newhi" class="newhi hidden">&#9733; NEW HI-SCORE &#9733;</div>
@@ -83,7 +120,7 @@
 
     <div id="controls">
       <button id="btn-sound" class="toggle-btn">SND:ON</button>
-      <span class="controls-hint">SPACE / ENTER = START &middot; NEXT</span>
+      <span class="controls-hint">SPACE / ENTER = START &middot; NEXT &nbsp;&middot;&nbsp; 1-4 = PICK</span>
       <button id="btn-crt" class="toggle-btn">CRT:ON</button>
     </div>
   </div>

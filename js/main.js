@@ -31,7 +31,7 @@
     });
   });
 
-  L.control.zoom({ position: "bottomright" }).addTo(map);
+  L.control.zoom({ position: "topright" }).addTo(map);
 
   // Sound toggle
   var soundBtn = $("btn-sound");

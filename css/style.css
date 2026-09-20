@@ -812,3 +812,241 @@ body.no-crt #crt {
     max-height: 26vh;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Mode select
+   -------------------------------------------------------------------------- */
+.modes-title {
+  font-size: 22px;
+  color: var(--cyan);
+  text-shadow: 2px 2px 0 #0a5c66, 0 0 12px rgba(46, 242, 255, 0.7);
+}
+
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(520px, 100%);
+}
+
+.mode-btn {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "key name hi"
+    "key desc hi";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--white);
+  background: rgba(7, 6, 12, 0.9);
+  border: 3px solid var(--bezel-edge);
+  border-radius: 8px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.mode-btn:hover,
+.mode-btn:focus-visible {
+  border-color: var(--yellow);
+  transform: translateX(6px);
+  box-shadow: 0 0 16px rgba(255, 230, 0, 0.35);
+  outline: none;
+}
+
+.mode-btn.last {
+  border-color: var(--magenta);
+}
+
+.mode-btn.last::before {
+  content: "\25B6";
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--yellow);
+  font-size: 12px;
+  animation: blink 0.8s steps(1) infinite;
+}
+
+.mode-key {
+  grid-area: key;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--bg);
+  background: var(--yellow);
+  border-radius: 4px;
+}
+
+.mode-name {
+  grid-area: name;
+  font-size: 14px;
+  color: var(--yellow);
+}
+
+.mode-desc {
+  grid-area: desc;
+  font-size: 7px;
+  line-height: 1.6;
+  color: #b9b0d9;
+}
+
+.mode-hi {
+  grid-area: hi;
+  font-size: 8px;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Answer panel (name modes)
+   -------------------------------------------------------------------------- */
+#answer {
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(46, 242, 255, 0.5);
+}
+
+.answer-title {
+  margin-bottom: 10px;
+  font-size: 10px;
+  text-align: center;
+  letter-spacing: 2px;
+  color: var(--cyan);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  min-height: 46px;
+  text-align: left;
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--white);
+  background: #12102a;
+  border: 2px solid var(--bezel-edge);
+  border-radius: 6px;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.choice-btn:hover:not(:disabled),
+.choice-btn:focus-visible {
+  border-color: var(--yellow);
+  background: #1c1840;
+  outline: none;
+}
+
+.choice-btn:disabled {
+  cursor: default;
+}
+
+.choice-btn.correct {
+  border-color: var(--lime);
+  background: rgba(125, 255, 46, 0.18);
+  color: var(--lime);
+}
+
+.choice-btn.wrong {
+  border-color: var(--red);
+  background: rgba(255, 51, 85, 0.18);
+  color: var(--red);
+  animation: shake 0.4s linear;
+}
+
+.choice-key {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  font-size: 9px;
+  color: var(--bg);
+  background: var(--cyan);
+  border-radius: 3px;
+}
+
+.choice-btn.correct .choice-key { background: var(--lime); }
+.choice-btn.wrong .choice-key { background: var(--red); }
+
+.answer-form {
+  display: flex;
+  gap: 8px;
+}
+
+.answer-form .arcade-btn {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+#answer-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--yellow);
+  background: #0a0818;
+  border: 2px solid var(--cyan);
+  border-radius: 4px;
+  outline: none;
+  text-transform: uppercase;
+}
+
+#answer-input::placeholder {
+  color: #4f4770;
+  font-size: 8px;
+}
+
+#answer-input:focus {
+  box-shadow: 0 0 12px rgba(46, 242, 255, 0.5);
+}
+
+.hud-mode span {
+  color: var(--magenta);
+}
+
+#end-breakdown .bd-dist {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .modes-title { font-size: 16px; }
+  .mode-btn { column-gap: 10px; padding: 10px 12px; }
+  .mode-btn:hover { transform: none; }
+  .mode-name { font-size: 11px; }
+  .mode-desc { font-size: 6px; }
+  .mode-hi { display: none; }
+  .hud-mode { display: none; }
+  .choices { grid-template-columns: 1fr; gap: 6px; }
+  .choice-btn { min-height: 38px; padding: 8px 10px; font-size: 8px; }
+  #answer-input { font-size: 9px; padding: 10px; }
+}
+
+.panel.measuring {
+  visibility: hidden;
+  animation: none;
+}
+
+/* Zoom control sits just under the HUD, away from the bottom panels. */
+.leaflet-top.leaflet-right {
+  top: 44px;
+}
+
+#answer {
+  background: rgba(7, 6, 12, 0.85);
+}
