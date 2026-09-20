@@ -32,7 +32,7 @@ Pinpoint scoring per street (max 1000):
 | ≤ 500 m            | CLOSE   | ~700            |
 | > 500 m            | MISS    | down to 0 at 1.5 km |
 
-Ranks: 18 000+ *Echte Rotterdammer* · 12 000+ *Local* · 6 000+ *Commuter* · otherwise *Tourist*.
+Ranks (share of the maximum score): 90 %+ *Echte Rotterdammer* · 60 %+ *Local* · 30 %+ *Commuter* · otherwise *Tourist*.
 
 ## Running it locally
 
