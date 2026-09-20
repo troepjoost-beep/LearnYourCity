@@ -17,19 +17,27 @@
     type: { label: "TYPE IT", stamps: { perfect: "CORRECT!", great: "ALMOST!", miss: "WRONG" } }
   };
 
+  // Learning mode: how many perfects a street still needs before it is mastered. Every miss
+  // adds one (up to LEARN_MAX_NEEDED) and puts the street back a few rounds down the queue.
+  var LEARN_MAX_NEEDED = 3;
+
   var state = "TITLE";
   var mode = "pin";
+  var play = "game"; // "game" = 20 random streets for a high score, "learn" = master every street
   var map = null;
   var streets = [];
-  var order = []; // the street objects for this game, in play order
+  var order = []; // game mode: the street objects for this game, in play order
+  var current = null; // the street being asked about
   var totalRounds = MAX_ROUNDS;
   var disabled = {}; // street name -> true when switched off in settings
+  var learn = null; // learning-mode progress: { queue, needed, mastered, stats, score, attempts }
   var round = 0;
   var score = 0;
   var results = [];
   var hiScores = { pin: 0, mc: 0, type: 0 };
   var layers = null; // Leaflet layer group for the current round's drawings
   var cancelTyping = null;
+  var session = 0; // bumped whenever a game starts or is quit, so stale timeouts do nothing
 
   // ---- Persistence -------------------------------------------------------
 
@@ -48,6 +56,23 @@
       off.forEach(function (name) {
         disabled[name] = true;
       });
+      var p = localStorage.getItem("lyc_play");
+      if (p === "learn" || p === "game") play = p;
+      var saved = JSON.parse(localStorage.getItem("lyc_learn") || "null");
+      if (saved && saved.needed && saved.mastered) learn = saved;
+    } catch (e) {}
+  }
+
+  function savePlay() {
+    try {
+      localStorage.setItem("lyc_play", play);
+    } catch (e) {}
+  }
+
+  function saveLearn() {
+    try {
+      if (learn) localStorage.setItem("lyc_learn", JSON.stringify(learn));
+      else localStorage.removeItem("lyc_learn");
     } catch (e) {}
   }
 
@@ -89,14 +114,29 @@
   }
 
   function currentStreet() {
-    return order[round - 1];
+    return current;
+  }
+
+  function streetByName(name) {
+    for (var i = 0; i < streets.length; i++) if (streets[i].name === name) return streets[i];
+    return null;
   }
 
   function updateHud() {
-    $("hud-round").textContent = UI.pad(round, 2);
-    $("hud-total").textContent = UI.pad(totalRounds, 2);
-    $("hud-hi").textContent = UI.pad(hiScores[mode], 6);
-    $("hud-mode").textContent = MODE_INFO[mode].label;
+    if (play === "learn") {
+      $("hud-label").textContent = "DONE";
+      $("hud-round").textContent = UI.pad(learnMasteredCount(), 2);
+      $("hud-total").textContent = UI.pad(learnTotal(), 2);
+      $("hud-hi").textContent = UI.pad(learn ? learn.queue.length : 0, 2);
+      $("hud-hi-label").textContent = "LEFT";
+    } else {
+      $("hud-label").textContent = "ROUND";
+      $("hud-round").textContent = UI.pad(round, 2);
+      $("hud-total").textContent = UI.pad(totalRounds, 2);
+      $("hud-hi").textContent = UI.pad(hiScores[mode], 6);
+      $("hud-hi-label").textContent = "HI";
+    }
+    $("hud-mode").textContent = (play === "learn" ? "LEARN · " : "") + MODE_INFO[mode].label;
   }
 
   function renderModeButtons() {
@@ -115,7 +155,118 @@
     $("modes-warning").classList.toggle("hidden", playable);
     document.querySelectorAll(".mode-btn").forEach(function (btn) {
       btn.disabled = !playable;
+      // Per-mode high scores only mean something in game mode.
+      btn.querySelector(".mode-hi").classList.toggle("hidden", play === "learn");
     });
+
+    // Game / learn toggle and learning progress.
+    document.querySelectorAll(".play-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-play") === play);
+    });
+    $("play-desc-game").classList.toggle("hidden", play !== "game");
+    $("play-desc-learn").classList.toggle("hidden", play !== "learn");
+    var inProgress = play === "learn" && learn && learn.attempts > 0;
+    $("learn-progress").classList.toggle("hidden", !inProgress);
+    if (inProgress) {
+      $("learn-progress-text").textContent =
+        "IN PROGRESS: " + learnMasteredCount() + "/" + learnTotal() + " MASTERED · " + learn.attempts + " TRIES";
+    }
+  }
+
+  // ---- Learning mode -----------------------------------------------------
+
+  function learnTotal() {
+    return enabledStreets().length;
+  }
+
+  function learnMasteredCount() {
+    if (!learn) return 0;
+    return enabledStreets().filter(function (s) {
+      return learn.mastered[s.name];
+    }).length;
+  }
+
+  // Starts a fresh learning session, or resumes the saved one against the current street settings
+  // (streets switched off in settings are skipped; newly enabled ones are added to the queue).
+  function prepareLearn() {
+    if (!learn) learn = { queue: [], needed: {}, mastered: {}, stats: {}, score: 0, attempts: 0 };
+    var pool = enabledStreets();
+    var inQueue = {};
+    learn.queue = learn.queue.filter(function (name) {
+      var s = streetByName(name);
+      var keep = s && !disabled[name] && !learn.mastered[name] && !inQueue[name];
+      if (keep) inQueue[name] = true;
+      return keep;
+    });
+    var extra = pool.filter(function (s) {
+      return !learn.mastered[s.name] && !inQueue[s.name];
+    });
+    learn.queue = learn.queue.concat(shuffle(extra).map(function (s) { return s.name; }));
+    saveLearn();
+  }
+
+  function resetLearn() {
+    learn = null;
+    saveLearn();
+    renderModeButtons();
+    Sfx.miss();
+  }
+
+  // Called after every learning-mode answer. Returns a short status line for the result panel.
+  function learnRecord(street, rating, pts) {
+    var name = street.name;
+    var stat = learn.stats[name] || { tries: 0, points: 0 };
+    stat.tries++;
+    stat.points += pts;
+    learn.stats[name] = stat;
+    learn.attempts++;
+    learn.score += pts;
+    var needed = learn.needed[name] || 1;
+    var status;
+    if (rating === "perfect") {
+      needed--;
+      if (needed <= 0) {
+        learn.mastered[name] = true;
+        delete learn.needed[name];
+        status = "MASTERED! " + learn.queue.length + " TO GO";
+      } else {
+        learn.needed[name] = needed;
+        requeue(name);
+        status = "GOOD. " + needed + " MORE PERFECT" + (needed > 1 ? "S" : "") + " TO MASTER IT";
+      }
+    } else {
+      needed = Math.min(LEARN_MAX_NEEDED, needed + 1);
+      learn.needed[name] = needed;
+      requeue(name);
+      status = "COMES BACK SOON. NEEDS " + needed + " PERFECT" + (needed > 1 ? "S" : "");
+    }
+    saveLearn();
+    return status;
+  }
+
+  // Puts a street back into the queue 2-6 rounds ahead (or at the end if the queue is shorter).
+  function requeue(name) {
+    var pos = Math.min(learn.queue.length, 2 + Math.floor(Math.random() * 5));
+    learn.queue.splice(pos, 0, name);
+  }
+
+  function quitToMenu() {
+    // Leaving mid-question: the current street hasn't been recorded yet, so ask it first next time.
+    if (play === "learn" && learn && current && state !== "RESULT" && state !== "END") {
+      learn.queue.unshift(current.name);
+      saveLearn();
+    }
+    session++;
+    if (cancelTyping) cancelTyping();
+    layers.clearLayers();
+    UI.hide($("result"));
+    UI.hide($("answer"));
+    UI.hide($("prompt"));
+    UI.hide($("hud"));
+    UI.hide($("end"));
+    $("screen").classList.remove("playing");
+    $("round-card").classList.remove("show");
+    showModes();
   }
 
   // Three wrong answers for multiple choice, drawn from the 8 streets nearest to the right one
@@ -205,14 +356,20 @@
     mode = selectedMode;
     saveMode();
     Sfx.round();
+    session++;
     state = "STARTING";
-    var pool = enabledStreets();
-    totalRounds = Math.min(MAX_ROUNDS, pool.length);
-    order = shuffle(pool).slice(0, totalRounds);
     round = 0;
-    score = 0;
     results = [];
-    $("hud-score").textContent = UI.pad(0, 6);
+    if (play === "learn") {
+      prepareLearn();
+      score = learn.score;
+    } else {
+      var pool = enabledStreets();
+      totalRounds = Math.min(MAX_ROUNDS, pool.length);
+      order = shuffle(pool).slice(0, totalRounds);
+      score = 0;
+    }
+    $("hud-score").textContent = UI.pad(score, 6);
     UI.hide($("modes"));
     UI.show($("hud"));
     setTimeout(nextRound, 300);
@@ -226,17 +383,31 @@
     UI.hide($("prompt"));
     layers.clearLayers();
     round++;
-    if (round > totalRounds) return endGame();
+    var card;
+    if (play === "learn") {
+      if (!learn.queue.length) return endGame();
+      current = streetByName(learn.queue.shift());
+      card = learn.queue.length + " LEFT";
+    } else {
+      if (round > totalRounds) return endGame();
+      current = order[round - 1];
+      card = "ROUND " + round;
+    }
     updateHud();
     state = "ROUNDCARD";
     Sfx.round();
+    var s = session;
     if (mode === "pin") {
       map.flyTo(HOME_VIEW.center, HOME_VIEW.zoom, { duration: UI.reduceMotion ? 0 : 0.8 });
       $("prompt-name").textContent = "";
       UI.show($("prompt"));
-      UI.roundCard("ROUND " + round, startPinRound);
+      UI.roundCard(card, function () {
+        if (s === session) startPinRound();
+      });
     } else {
-      UI.roundCard("ROUND " + round, startNameRound);
+      UI.roundCard(card, function () {
+        if (s === session) startNameRound();
+      });
     }
   }
 
@@ -273,18 +444,22 @@
     var py = mapRect.top + screenPt.y;
 
     // Sequence: marker drops -> map flies to frame street + click -> street draws on -> result panel.
+    var s = session;
     var fly = UI.reduceMotion ? 0 : 700;
     setTimeout(function () {
+      if (s !== session) return;
       var bounds = streetBounds(street).extend(click);
       map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 16, duration: fly / 1000 });
     }, 300);
 
     setTimeout(function () {
+      if (s !== session) return;
       revealStreet(street);
       if (rating !== "perfect" && hit.nearest) drawMissLine(click, hit.nearest, hit.distance);
     }, 300 + fly + 100);
 
     setTimeout(function () {
+      if (s !== session) return;
       var detail = rating === "perfect" ? "ON THE STREET" : Geo.formatDistance(hit.distance) + " OFF";
       showResult(street, rating, pts, detail, px, py);
     }, 300 + fly + 600);
@@ -331,12 +506,14 @@
     // then draw the street and reveal the panel.
     panel.classList.add("measuring");
     UI.show(panel);
+    var s = session;
     var fly = UI.reduceMotion ? 0 : 800;
     flyToStreet(street, panel, fly);
     setTimeout(function () {
-      revealStreet(street);
+      if (s === session) revealStreet(street);
     }, fly + 100);
     setTimeout(function () {
+      if (s !== session) return;
       panel.classList.remove("measuring");
       state = "ANSWERING";
       if (mode === "type") $("answer-input").focus();
@@ -370,7 +547,9 @@
     var rect = $("answer").getBoundingClientRect();
     var px = rect.left + rect.width / 2;
     var py = rect.top;
+    var s = session;
     setTimeout(function () {
+      if (s !== session) return;
       UI.hide($("answer"));
       var detail = rating === "perfect" ? "YOU GOT IT" : "YOU SAID: " + text.toUpperCase();
       showResult(street, rating, pts, detail, px, py);
@@ -389,6 +568,15 @@
     $("result-distance").textContent = detail;
     $("result-points").textContent = "+" + pts;
     $("result-hint").textContent = street.hint || "";
+    var learnLine = $("result-learn");
+    if (play === "learn") {
+      learnLine.textContent = learnRecord(street, rating, pts);
+      learnLine.className = "result-learn " + (rating === "perfect" ? "good" : "again");
+      UI.show(learnLine);
+      updateHud();
+    } else {
+      UI.hide(learnLine);
+    }
     UI.show(panel);
     UI.flash(stamp, "slam");
 
@@ -403,42 +591,68 @@
   }
 
   // Rank by share of the maximum possible score, so shorter games (fewer enabled streets) rank fairly.
+  // In learning mode every attempt counts, so repeated misses cost rank.
   function rankFor(total) {
-    var share = total / (totalRounds * 1000);
+    var rounds = play === "learn" ? Math.max(1, learn.attempts) : totalRounds;
+    var share = total / (rounds * 1000);
     if (share >= 0.9) return "ECHTE ROTTERDAMMER";
     if (share >= 0.6) return "LOCAL";
     if (share >= 0.3) return "COMMUTER";
     return "TOURIST";
   }
 
+  function addBreakdownRow(list, cls, name, detail, points) {
+    var li = document.createElement("li");
+    li.className = cls;
+    li.innerHTML =
+      "<span class=\"bd-name\"></span>" +
+      "<span class=\"bd-dist\"></span>" +
+      "<span class=\"bd-pts\">" + points + "</span>";
+    li.querySelector(".bd-name").textContent = name;
+    li.querySelector(".bd-dist").textContent = detail;
+    list.appendChild(li);
+  }
+
   function endGame() {
     state = "END";
     UI.hide($("prompt"));
-    var isNewHi = score > hiScores[mode];
-    if (isNewHi) {
-      hiScores[mode] = score;
-      saveHiScore();
-      updateHud();
-    }
-
     var list = $("end-breakdown");
     list.innerHTML = "";
-    results.forEach(function (r) {
-      var li = document.createElement("li");
-      li.className = r.rating;
-      var detail;
-      if (r.mode === "pin") detail = r.rating === "perfect" ? "HIT" : Geo.formatDistance(r.distance);
-      else detail = r.rating === "perfect" ? "✓" : r.answer;
-      li.innerHTML =
-        "<span class=\"bd-name\"></span>" +
-        "<span class=\"bd-dist\"></span>" +
-        "<span class=\"bd-pts\">" + r.points + "</span>";
-      li.querySelector(".bd-name").textContent = r.name;
-      li.querySelector(".bd-dist").textContent = detail;
-      list.appendChild(li);
-    });
+    var isNewHi = false;
+    var rank = null;
 
-    $("end-mode").textContent = MODE_INFO[mode].label;
+    if (play === "learn") {
+      // Every street mastered: list the ones that took the most tries first.
+      var names = Object.keys(learn.stats).sort(function (a, b) {
+        return learn.stats[b].tries - learn.stats[a].tries;
+      });
+      names.forEach(function (name) {
+        var st = learn.stats[name];
+        var cls = st.tries === 1 ? "perfect" : st.tries === 2 ? "great" : st.tries === 3 ? "close" : "miss";
+        addBreakdownRow(list, cls, name, st.tries + (st.tries === 1 ? " TRY" : " TRIES"), st.points);
+      });
+      $("end-title").textContent = "ALL MASTERED!";
+      $("end-mode").textContent = "LEARN · " + MODE_INFO[mode].label + " · " + learn.attempts + " TRIES";
+      rank = rankFor(score);
+      learn = null; // the course is complete; the next learning session starts fresh
+      saveLearn();
+    } else {
+      isNewHi = score > hiScores[mode];
+      if (isNewHi) {
+        hiScores[mode] = score;
+        saveHiScore();
+        updateHud();
+      }
+      results.forEach(function (r) {
+        var detail;
+        if (r.mode === "pin") detail = r.rating === "perfect" ? "HIT" : Geo.formatDistance(r.distance);
+        else detail = r.rating === "perfect" ? "✓" : r.answer;
+        addBreakdownRow(list, r.rating, r.name, detail, r.points);
+      });
+      $("end-title").textContent = "GAME OVER";
+      $("end-mode").textContent = MODE_INFO[mode].label;
+    }
+
     $("end-rank").textContent = "";
     $("end-rank").className = "stamp";
     $("end-newhi").classList.toggle("hidden", !isNewHi);
@@ -451,7 +665,7 @@
       duration: 1600,
       tick: Sfx.tick,
       onDone: function () {
-        $("end-rank").textContent = rankFor(score);
+        $("end-rank").textContent = rank || rankFor(score);
         UI.flash($("end-rank"), "slam");
       }
     });
@@ -610,6 +824,17 @@
       submitAnswer($("answer-input").value);
     });
 
+    document.querySelectorAll(".play-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        play = btn.getAttribute("data-play");
+        savePlay();
+        Sfx.blip();
+        renderModeButtons();
+      });
+    });
+    $("btn-learn-reset").addEventListener("click", resetLearn);
+    $("btn-menu").addEventListener("click", quitToMenu);
+
     buildSettings();
     $("btn-settings").addEventListener("click", showSettings);
     $("btn-settings-2").addEventListener("click", showSettings);
@@ -635,6 +860,7 @@
     document.addEventListener("keydown", function (e) {
       var tag = e.target && e.target.tagName;
       if (e.code === "Escape" && state === "SETTINGS") return closeSettings();
+      if (e.code === "Escape" && !$("hud").classList.contains("hidden") && state !== "END") return quitToMenu();
       if (tag === "BUTTON" || tag === "INPUT") return; // let a focused control handle its own keys
       if (state === "SETTINGS") return;
       if (state === "MODES" && /^Digit[123]$/.test(e.code)) {

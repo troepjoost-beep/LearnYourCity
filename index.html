@@ -23,10 +23,11 @@
 
       <!-- Heads-up display -->
       <div id="hud" class="hidden">
-        <div class="hud-item">ROUND <span id="hud-round">01</span>/<span id="hud-total">20</span></div>
+        <div class="hud-item"><span id="hud-label">ROUND</span> <span id="hud-round">01</span>/<span id="hud-total">20</span></div>
         <div class="hud-item">SCORE <span id="hud-score" class="num">000000</span></div>
         <div class="hud-item hud-mode"><span id="hud-mode">PINPOINT</span></div>
-        <div class="hud-item hud-hi">HI <span id="hud-hi" class="num">000000</span></div>
+        <div class="hud-item hud-hi"><span id="hud-hi-label">HI</span> <span id="hud-hi" class="num">000000</span></div>
+        <button id="btn-menu" class="hud-btn">MENU</button>
       </div>
 
       <!-- Prompt -->
@@ -59,6 +60,7 @@
           <div id="result-points" class="result-points"></div>
           <button id="btn-next" class="arcade-btn">NEXT &#9654;</button>
         </div>
+        <div id="result-learn" class="result-learn hidden"></div>
         <div id="result-hint" class="result-hint"></div>
       </div>
 
@@ -84,6 +86,16 @@
       <!-- Mode select -->
       <div id="modes" class="overlay hidden">
         <div class="modes-title">SELECT MODE</div>
+        <div class="play-toggle">
+          <button class="play-btn active" data-play="game">GAME</button>
+          <button class="play-btn" data-play="learn">LEARN</button>
+        </div>
+        <div id="play-desc-game" class="play-desc">20 RANDOM STREETS. GO FOR THE HIGH SCORE.</div>
+        <div id="play-desc-learn" class="play-desc hidden">EVERY STREET UNTIL YOU HAVE MASTERED THEM ALL. A PERFECT REMOVES A STREET; A MISS BRINGS IT BACK AND IT WILL NEED MORE PERFECTS. PROGRESS IS SAVED.</div>
+        <div id="learn-progress" class="learn-progress hidden">
+          <span id="learn-progress-text"></span>
+          <button id="btn-learn-reset" class="toggle-btn">RESET</button>
+        </div>
         <div class="mode-list">
           <button class="mode-btn" data-mode="pin">
             <span class="mode-key">1</span>
@@ -125,7 +137,7 @@
 
       <!-- End screen -->
       <div id="end" class="overlay hidden">
-        <div class="end-title">GAME OVER</div>
+        <div id="end-title" class="end-title">GAME OVER</div>
         <div class="end-score-label"><span id="end-mode">PINPOINT</span> &middot; FINAL SCORE</div>
         <div id="end-score" class="end-score num">000000</div>
         <div id="end-rank" class="stamp"></div>

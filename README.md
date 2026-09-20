@@ -18,6 +18,14 @@ Press **START** (or `Space` / `Enter`) and pick a mode:
 After 20 streets you get a final score, a rank and a per-street breakdown. High scores are
 kept per mode in the browser. Every result also shows a short fact about the street.
 
+**Game or Learn** (toggle on the mode screen):
+
+- **Game** – 20 random streets, high score per mode.
+- **Learn** – every enabled street, until you have mastered them all. A perfect answer removes a
+  street; anything less puts it back 2–6 rounds later and it then needs one extra perfect (up to 3)
+  before it counts as mastered. Progress is saved, so you can stop with **MENU** (or `Esc`) and
+  continue later; **RESET** starts over. The end screen lists the streets that took the most tries.
+
 **Settings** (⚙ button on the start and mode screens) lets you switch individual streets or
 whole areas on or off, with a filter box and ALL / NONE buttons. A game then draws up to 20 of
 the enabled streets (at least 5 must be enabled); ranks scale with the number of rounds. The
