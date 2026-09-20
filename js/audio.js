@@ -2,9 +2,10 @@
 // The AudioContext is created lazily on the first user gesture (browser policy).
 (function () {
   var ctx = null;
-  var muted = false;
+  // Sound is off by default; the player's choice is remembered once they toggle it.
+  var muted = true;
   try {
-    muted = localStorage.getItem("lyc_muted") === "1";
+    muted = localStorage.getItem("lyc_muted") !== "0";
   } catch (e) {}
 
   function ensure() {
