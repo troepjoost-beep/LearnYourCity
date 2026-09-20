@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn Your City – Rotterdam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" crossorigin="" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="cabinet">
+    <div id="marquee">
+      <span class="marquee-text">LEARN YOUR CITY</span>
+      <span class="marquee-sub">★ ROTTERDAM EDITION ★</span>
+    </div>
+
+    <div id="screen">
+      <div id="map"></div>
+
+      <!-- Heads-up display -->
+      <div id="hud" class="hidden">
+        <div class="hud-item">ROUND <span id="hud-round">01</span>/<span id="hud-total">20</span></div>
+        <div class="hud-item">SCORE <span id="hud-score" class="num">000000</span></div>
+        <div class="hud-item hud-hi">HI <span id="hud-hi" class="num">000000</span></div>
+      </div>
+
+      <!-- Prompt -->
+      <div id="prompt" class="hidden">
+        <span class="prompt-label">FIND:</span>
+        <span id="prompt-name" class="typed"></span>
+      </div>
+
+      <!-- Round card -->
+      <div id="round-card"></div>
+
+      <!-- Result panel -->
+      <div id="result" class="panel hidden">
+        <div class="result-row">
+          <div id="result-rating" class="stamp"></div>
+          <div class="result-mid">
+            <div id="result-name" class="result-name"></div>
+            <div id="result-distance" class="result-line"></div>
+          </div>
+          <div id="result-points" class="result-points"></div>
+          <button id="btn-next" class="arcade-btn">NEXT &#9654;</button>
+        </div>
+        <div id="result-hint" class="result-hint"></div>
+      </div>
+
+      <!-- Title screen -->
+      <div id="title" class="overlay">
+        <div class="logo">
+          <div class="logo-line1">LEARN YOUR</div>
+          <div class="logo-line2">CITY</div>
+          <div class="logo-line3">ROTTERDAM</div>
+        </div>
+        <p class="howto">
+          A STREET NAME APPEARS.<br />
+          CLICK WHERE IT IS ON THE MAP.<br />
+          CLOSER = MORE POINTS.<br />
+          ANY POINT ALONG THE STREET COUNTS.
+        </p>
+        <button id="btn-start" class="arcade-btn blink">PRESS START</button>
+        <div class="hi-line">HI-SCORE <span id="title-hi" class="num">000000</span></div>
+        <div class="credit">20 STREETS &middot; 1000 PTS EACH</div>
+      </div>
+
+      <!-- End screen -->
+      <div id="end" class="overlay hidden">
+        <div class="end-title">GAME OVER</div>
+        <div class="end-score-label">FINAL SCORE</div>
+        <div id="end-score" class="end-score num">000000</div>
+        <div id="end-rank" class="stamp"></div>
+        <div id="end-newhi" class="newhi hidden">&#9733; NEW HI-SCORE &#9733;</div>
+        <ul id="end-breakdown"></ul>
+        <button id="btn-again" class="arcade-btn blink">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-sound" class="toggle-btn">SND:ON</button>
+      <span class="controls-hint">SPACE / ENTER = START &middot; NEXT</span>
+      <button id="btn-crt" class="toggle-btn">CRT:ON</button>
+    </div>
+  </div>
+
+  <div id="crt"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js" crossorigin=""></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js" crossorigin=""></script>
+  <script src="data/streets-raw.js"></script>
+  <script src="data/streets.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
